@@ -1,4 +1,5 @@
 using Data.Lab3;
+using Lab3.Infrastructure;
 using Lab3.Models;
 using Lab3.Services;
 
@@ -51,27 +52,119 @@ namespace Lab3
                 });
             });
 
-            //app.Map("/form", (appBuilder) =>
-            //{
-            //    appBuilder.Run(async (context) =>
-            //    {
-            //        Genre genre = context.Session.Get<Genre>("genre") ?? new Genre();
+            app.Map("/searchform1", (appBuilder) =>
+            {
+                appBuilder.Run(async (context) =>
+                {
+                    Movie movie = context.Session.Get<Movie>("movie") ?? new Movie();
 
-            //        string strResponse = "<HTML><HEAD><TITLE>Жанр</TITLE></HEAD>" +
-            //        "<META http-equiv='Content-Type' content='text/html; charset=utf-8'/>" +
-            //        "<BODY><FORM action ='/form' / >" +
-            //        "Название жанра:<BR><INPUT type = 'text' name = 'Name' value = " + genre.Name + ">" +
-            //        "<BR>Описание:<BR><INPUT type = 'text' name = 'Description' value = " + genre.Description + " >" +
-            //        "<BR><BR><INPUT type ='submit' value='Сохранить в Session'><INPUT type ='submit' value='Показать'></FORM>";
-            //        strResponse += "<BR><A href='/'>Главная</A></BODY></HTML>";
+                    ICachedService<Actor> cachedActorsService = context.RequestServices.GetService<ICachedService<Actor>>();
+                    List<Actor> actors = cachedActorsService.GetFromCache("Actors20").ToList();
 
-            //        genre.Name = context.Request.Query["Name"];
-            //        genre.Description = context.Request.Query["Description"];
-            //        context.Session.Set<Genre>("genre", genre);
+                    ICachedService<Genre> cachedGenresService = context.RequestServices.GetService<ICachedService<Genre>>();
+                    List<Genre> genres = cachedGenresService.GetFromCache("Genres20").ToList();
 
-            //        await context.Response.WriteAsync(strResponse);
-            //    });
-            //});
+                    string strResponse = "<HTML><HEAD><TITLE>Фильм</TITLE></HEAD>" +
+                    "<META http-equiv='Content-Type' content='text/html; charset=utf-8'/>" +
+                    "<BODY><FORM action ='/searchform1' method='GET'>" +
+                    "Название фильма:<BR><INPUT type='text' name='Title' value='" + movie.Title + "'><BR>" +
+                    "Жанр:<BR><SELECT name='GenreId'>";
+                    foreach (var genre in genres)
+                    {
+                        bool isSelected = genre.GenreId == movie.GenreId;
+                        strResponse += $"<OPTION value='{genre.GenreId}' {(isSelected ? "selected" : "")}>{genre.Name}</OPTION>";
+                    }
+                    strResponse += "</SELECT><BR>" +
+                    "Актеры:<BR><SELECT name='Actors' multiple='multiple'>";
+                    foreach (var actor in actors)
+                    {
+                        bool isSelected = movie.Actors.Any(a => a.ActorId == actor.ActorId);
+                        strResponse += $"<OPTION value='{actor.ActorId}' {(isSelected ? "selected" : "")}>{actor.Name}</OPTION>";
+                    }
+                    strResponse += "</SELECT><BR>" +
+
+                    "<BR><INPUT type='submit' value='Сохранить в Session'></FORM>";
+
+                    strResponse += "<BR><A href='/'>Главная</A></BODY></HTML>";
+
+                    movie.Title = context.Request.Query["Title"];
+                    if (Guid.TryParse(context.Request.Query["GenreId"], out Guid genreId))
+                    {
+                        movie.GenreId = genreId;
+                    }
+
+                    var selectedActorIds = context.Request.Query["Actors"].ToArray();
+                    movie.Actors = actors.Where(actor => selectedActorIds.Contains(actor.ActorId.ToString())).ToList();
+
+                    context.Session.Set<Movie>("movie", movie);
+
+                    await context.Response.WriteAsync(strResponse);
+                });
+            });
+
+            app.Map("/searchform2", (appBuilder) =>
+            {
+                appBuilder.Run(async (context) =>
+                {
+                    Movie movie = new Movie();
+                    if (context.Request.Cookies.ContainsKey("Title"))
+                    {
+                        movie.Title = context.Request.Cookies["Title"];
+                    }
+                    if (context.Request.Cookies.ContainsKey("GenreId") && Guid.TryParse(context.Request.Cookies["GenreId"], out Guid genreId))
+                    {
+                        movie.GenreId = genreId;
+                    }
+                    if (context.Request.Cookies.ContainsKey("Actors"))
+                    {
+                        string[] actorIds = context.Request.Cookies["Actors"].Split(',');
+                        movie.Actors = actorIds.Select(id => new Actor { ActorId = Guid.Parse(id) }).ToList();
+                    }
+
+                    ICachedService<Actor> cachedActorsService = context.RequestServices.GetService<ICachedService<Actor>>();
+                    List<Actor> actors = cachedActorsService.GetFromCache("Actors20").ToList();
+
+                    ICachedService<Genre> cachedGenresService = context.RequestServices.GetService<ICachedService<Genre>>();
+                    List<Genre> genres = cachedGenresService.GetFromCache("Genres20").ToList();
+
+                    string strResponse = "<HTML><HEAD><TITLE>Фильм</TITLE></HEAD>" +
+                    "<META http-equiv='Content-Type' content='text/html; charset=utf-8'/>" +
+                    "<BODY><FORM action ='/searchform2' method='GET'>" +
+                    "Название фильма:<BR><INPUT type='text' name='Title' value='" + movie.Title + "'><BR>" +
+                    "Жанр:<BR><SELECT name='GenreId'>";
+                    foreach (var genre in genres)
+                    {
+                        bool isSelected = genre.GenreId == movie.GenreId;
+                        strResponse += $"<OPTION value='{genre.GenreId}' {(isSelected ? "selected" : "")}>{genre.Name}</OPTION>";
+                    }
+                    strResponse += "</SELECT><BR>" +
+                    "Актеры:<BR><SELECT name='Actors' multiple='multiple'>";
+                    foreach (var actor in actors)
+                    {
+                        bool isSelected = movie.Actors.Any(a => a.ActorId == actor.ActorId);
+                        strResponse += $"<OPTION value='{actor.ActorId}' {(isSelected ? "selected" : "")}>{actor.Name}</OPTION>";
+                    }
+                    strResponse += "</SELECT><BR>" +
+                    "<BR><INPUT type='submit' value='Сохранить в Cookie'></FORM>";
+
+                    strResponse += "<BR><A href='/'>Главная</A></BODY></HTML>";
+
+                    movie.Title = context.Request.Query["Title"];
+                    if (Guid.TryParse(context.Request.Query["GenreId"], out genreId))
+                    {
+                        movie.GenreId = genreId;
+                    }
+
+                    var selectedActorIds = context.Request.Query["Actors"].ToArray();
+                    movie.Actors = actors.Where(actor => selectedActorIds.Contains(actor.ActorId.ToString())).ToList();
+
+                    context.Response.Cookies.Append("Title", string.IsNullOrEmpty(movie.Title)?"":movie.Title, new CookieOptions { Expires = DateTimeOffset.UtcNow.AddDays(1) });
+                    context.Response.Cookies.Append("GenreId", string.IsNullOrEmpty(movie.GenreId.ToString())?"":movie.GenreId.ToString(), new CookieOptions { Expires = DateTimeOffset.UtcNow.AddDays(1) });
+                    context.Response.Cookies.Append("Actors", string.IsNullOrEmpty(string.Join(",", movie.Actors.Select(a => a.ActorId.ToString())))?"": string.Join(",", movie.Actors.Select(a => a.ActorId.ToString())), new CookieOptions { Expires = DateTimeOffset.UtcNow.AddDays(1) });
+
+                    await context.Response.WriteAsync(strResponse);
+                });
+            });
 
             app.Map("/genres", (appBuilder) =>
             {
@@ -418,7 +511,7 @@ namespace Lab3
                 HtmlString += "<H2>Данные записаны в кэш сервера</H2>";
                 HtmlString += "<BR><A href='/'>Главная</A></BR>";
                 HtmlString += "<BR><A href='/info'>Информация</A></BR>";
-                HtmlString += "<BR><A href='/genres'>Жанры</A></BR>";
+                HtmlString += "<BR><BR><A href='/genres'>Жанры</A></BR>";
                 HtmlString += "<BR><A href='/actors'>Актеры</A></BR>";
                 HtmlString += "<BR><A href='/employees'>Работники</A></BR>";
                 HtmlString += "<BR><A href='/events'>Мероприятия</A></BR>";
@@ -427,7 +520,7 @@ namespace Lab3
                 HtmlString += "<BR><A href='/showtimes'>Сеансы</A></BR>";
                 HtmlString += "<BR><A href='/tickets'>Билеты</A></BR>";
                 HtmlString += "<BR><A href='/workLogs'>Журналы работников</A></BR>";
-                HtmlString += "<BR><A href='/searchform1'>Форма 1</A></BR>";
+                HtmlString += "<BR><BR><A href='/searchform1'>Форма 1</A></BR>";
                 HtmlString += "<BR><A href='/searchform2'>Форма 2</A></BR>";
                 HtmlString += "</BODY></HTML>";
 
