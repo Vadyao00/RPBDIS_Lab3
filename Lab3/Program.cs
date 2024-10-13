@@ -32,7 +32,7 @@ namespace Lab3
 
             var app = builder.Build();
 
-            app.UseStaticFiles();
+            //app.UseStaticFiles();
 
             app.UseSession();
 
@@ -159,8 +159,8 @@ namespace Lab3
                     movie.Actors = actors.Where(actor => selectedActorIds.Contains(actor.ActorId.ToString())).ToList();
 
                     context.Response.Cookies.Append("Title", string.IsNullOrEmpty(movie.Title)?"":movie.Title, new CookieOptions { Expires = DateTimeOffset.UtcNow.AddDays(1) });
-                    context.Response.Cookies.Append("GenreId", string.IsNullOrEmpty(movie.GenreId.ToString())?"":movie.GenreId.ToString(), new CookieOptions { Expires = DateTimeOffset.UtcNow.AddDays(1) });
-                    context.Response.Cookies.Append("Actors", string.IsNullOrEmpty(string.Join(",", movie.Actors.Select(a => a.ActorId.ToString())))?"": string.Join(",", movie.Actors.Select(a => a.ActorId.ToString())), new CookieOptions { Expires = DateTimeOffset.UtcNow.AddDays(1) });
+                    context.Response.Cookies.Append("GenreId", string.IsNullOrEmpty(movie.GenreId.ToString())?"":movie.GenreId.ToString(), new CookieOptions { Expires = DateTimeOffset.UtcNow.AddMinutes(1) });
+                    context.Response.Cookies.Append("Actors", string.IsNullOrEmpty(string.Join(",", movie.Actors.Select(a => a.ActorId.ToString())))?"": string.Join(",", movie.Actors.Select(a => a.ActorId.ToString())), new CookieOptions { Expires = DateTimeOffset.UtcNow.AddMinutes(1) });
 
                     await context.Response.WriteAsync(strResponse);
                 });
