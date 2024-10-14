@@ -6,7 +6,10 @@ namespace Lab3.Infrastructure
     {
         public static void Set<T>(this ISession session,string key, T value)
         {
-            session.SetString(key, JsonConvert.SerializeObject(value));
+            session.SetString(key, JsonConvert.SerializeObject(value, new JsonSerializerSettings
+            {
+                PreserveReferencesHandling = PreserveReferencesHandling.Objects
+            }));
         }
 
         public static T Get<T>(this ISession session,string key)

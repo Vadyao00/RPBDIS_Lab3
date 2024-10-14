@@ -21,6 +21,11 @@ namespace Lab3.Services
             }
         }
 
+        public IEnumerable<Genre> GetAll()
+        {
+            return _dbContext.Genres.ToList();
+        }
+
         public IEnumerable<Genre> GetAllFromDb(int rowsNumber = 20)
         {
             return _dbContext.Genres.Take(rowsNumber).ToList();

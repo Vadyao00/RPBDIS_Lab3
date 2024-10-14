@@ -22,6 +22,11 @@ namespace Lab3.Services
             }
         }
 
+        public IEnumerable<Ticket> GetAll()
+        {
+            return _dbContext.Tickets.Include(t => t.Seat).ToList();
+        }
+
         public IEnumerable<Ticket> GetAllFromDb(int rowsNumber = 20)
         {
             return _dbContext.Tickets.Include(t => t.Seat).Take(rowsNumber).ToList();

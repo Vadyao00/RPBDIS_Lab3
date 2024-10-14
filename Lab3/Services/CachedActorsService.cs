@@ -1,6 +1,7 @@
 ﻿using Data.Lab3;
 using Microsoft.Extensions.Caching.Memory;
 using Lab3.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Lab3.Services
 {
@@ -19,6 +20,11 @@ namespace Lab3.Services
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(266)
                 });
             }
+        }
+
+        public IEnumerable<Actor> GetAll()
+        {
+            return _dbContext.Actors.Include(a => a.Movies).ToList();
         }
 
         public IEnumerable<Actor> GetAllFromDb(int rowsNumber = 20)

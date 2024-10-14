@@ -1,4 +1,6 @@
-﻿namespace Lab3.Models;
+﻿using Newtonsoft.Json;
+
+namespace Lab3.Models;
 
 public partial class Movie
 {
@@ -18,6 +20,7 @@ public partial class Movie
 
     public Guid GenreId { get; set; }
 
+    [JsonIgnore]
     public virtual Genre Genre { get; set; } = null!;
 
     public virtual ICollection<Showtime> Showtimes { get; set; } = new List<Showtime>();

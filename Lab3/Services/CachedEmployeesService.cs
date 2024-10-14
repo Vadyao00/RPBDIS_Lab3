@@ -21,6 +21,11 @@ namespace Lab3.Services
             }
         }
 
+        public IEnumerable<Employee> GetAll()
+        {
+            return _dbContext.Employees.ToList();
+        }
+
         public IEnumerable<Employee> GetAllFromDb(int rowsNumber = 20)
         {
             return _dbContext.Employees.Take(rowsNumber).ToList();

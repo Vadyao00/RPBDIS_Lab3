@@ -22,9 +22,14 @@ namespace Lab3.Services
             }
         }
 
+        public IEnumerable<Movie> GetAll()
+        {
+            return _dbContext.Movies.Include(m => m.Genre).Include(m => m.Actors).ToList();
+        }
+
         public IEnumerable<Movie> GetAllFromDb(int rowsNumber = 20)
         {
-            return _dbContext.Movies.Include(m => m.Genre).Take(rowsNumber).ToList();
+            return _dbContext.Movies.Include(m => m.Genre).Include(m => m.Actors).Take(rowsNumber).ToList();
         }
 
         public IEnumerable<Movie> GetFromCache(string cacheKey, int rowsNumber = 20)

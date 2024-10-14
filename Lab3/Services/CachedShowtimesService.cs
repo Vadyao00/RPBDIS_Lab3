@@ -22,6 +22,11 @@ namespace Lab3.Services
             }
         }
 
+        public IEnumerable<Showtime> GetAll()
+        {
+            return _dbContext.Showtimes.Include(s => s.Movie).ToList();
+        }
+
         public IEnumerable<Showtime> GetAllFromDb(int rowsNumber = 20)
         {
             return _dbContext.Showtimes.Include(s => s.Movie).Take(rowsNumber).ToList();

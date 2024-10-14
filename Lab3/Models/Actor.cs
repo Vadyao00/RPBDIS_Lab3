@@ -1,4 +1,6 @@
-﻿namespace Lab3.Models;
+﻿using Newtonsoft.Json;
+
+namespace Lab3.Models;
 
 public partial class Actor
 {

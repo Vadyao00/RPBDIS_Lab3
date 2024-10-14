@@ -32,8 +32,6 @@ namespace Lab3
 
             var app = builder.Build();
 
-            //app.UseStaticFiles();
-
             app.UseSession();
 
             app.Map("/info", (appBuilder) =>
@@ -59,46 +57,88 @@ namespace Lab3
                     Movie movie = context.Session.Get<Movie>("movie") ?? new Movie();
 
                     ICachedService<Actor> cachedActorsService = context.RequestServices.GetService<ICachedService<Actor>>();
-                    List<Actor> actors = cachedActorsService.GetFromCache("Actors20").ToList();
-
+                    List<Actor> actors20 = cachedActorsService.GetFromCache("Actors20").ToList();
+                    List<Actor> actors = cachedActorsService.GetAll().ToList();
+                    
                     ICachedService<Genre> cachedGenresService = context.RequestServices.GetService<ICachedService<Genre>>();
                     List<Genre> genres = cachedGenresService.GetFromCache("Genres20").ToList();
 
                     string strResponse = "<HTML><HEAD><TITLE>Фильм</TITLE></HEAD>" +
                     "<META http-equiv='Content-Type' content='text/html; charset=utf-8'/>" +
                     "<BODY><FORM action ='/searchform1' method='GET'>" +
-                    "Название фильма:<BR><INPUT type='text' name='Title' value='" + movie.Title + "'><BR>" +
-                    "Жанр:<BR><SELECT name='GenreId'>";
-                    foreach (var genre in genres)
-                    {
-                        bool isSelected = genre.GenreId == movie.GenreId;
-                        strResponse += $"<OPTION value='{genre.GenreId}' {(isSelected ? "selected" : "")}>{genre.Name}</OPTION>";
-                    }
-                    strResponse += "</SELECT><BR>" +
+                    "Возрастное ограничение:<BR><INPUT type='text' name='AgeRestriction' value='" + movie.AgeRestriction + "'><BR>" +
+                    //"Жанр:<BR><SELECT name='GenreId'>";
+                    //foreach (var genre in genres)
+                    //{
+                    //    bool isSelected = genre.GenreId == movie.GenreId;
+                    //    strResponse += $"<OPTION value='{genre.GenreId}' {(isSelected ? "selected" : "")}>{genre.Name}</OPTION>";
+                    //}
+                    //strResponse += "</SELECT><BR>" +
                     "Актеры:<BR><SELECT name='Actors' multiple='multiple'>";
-                    foreach (var actor in actors)
+                    foreach (var actor in actors20)
                     {
                         bool isSelected = movie.Actors.Any(a => a.ActorId == actor.ActorId);
                         strResponse += $"<OPTION value='{actor.ActorId}' {(isSelected ? "selected" : "")}>{actor.Name}</OPTION>";
                     }
                     strResponse += "</SELECT><BR>" +
 
-                    "<BR><INPUT type='submit' value='Сохранить в Session'></FORM>";
+                    "<BR><INPUT type='submit' value='Сохранить в Session и найти в базе данных'></FORM>";
 
                     strResponse += "<BR><A href='/'>Главная</A></BODY></HTML>";
 
-                    movie.Title = context.Request.Query["Title"];
+             
+
+                    if (!string.IsNullOrEmpty(context.Request.Query["AgeRestriction"]))
+                        movie.AgeRestriction = int.Parse(context.Request.Query["AgeRestriction"]);
+                    else 
+                        movie.AgeRestriction = 0;
                     if (Guid.TryParse(context.Request.Query["GenreId"], out Guid genreId))
                     {
                         movie.GenreId = genreId;
                     }
 
                     var selectedActorIds = context.Request.Query["Actors"].ToArray();
-                    movie.Actors = actors.Where(actor => selectedActorIds.Contains(actor.ActorId.ToString())).ToList();
+                    movie.Actors = actors20.Where(actor => selectedActorIds.Contains(actor.ActorId.ToString())).ToList();
+
+                    List<Movie> results = new List<Movie>();
+                    if (movie != default(Movie))
+                    {
+                        foreach (var p in movie.Actors)
+                        {
+                            results.AddRange(p.Movies);
+                        }
+                        results.Distinct();
+                        results = results.Where(m => m.AgeRestriction == movie.AgeRestriction).ToList();
+                        //results = results.Where(m => m.GenreId == movie.GenreId).ToList();
+                    }
+
+                    var html = "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Поиск из бд</title></head><body>";
+                    html += "<h1>Найденные результаты</h1>";
+
+                    if (results.Count > 0)
+                    {
+                        html += "<table border='1' style='border-collapse:collapse'>";
+                        html += "<tr><th>Название</th><th>Возрастное ограничение</th><th>Описание</th><th>Актеры</th></tr>";
+                        foreach (var mov in results)
+                        {
+                            html += "<tr>";
+                            html += $"<td>{mov.Title}</td>";
+                            html += $"<td>{mov.AgeRestriction}</td>";
+                            html += $"<td>{mov.Description}</td>";
+                            html += $"<td>{string.Join(", ", mov.Actors.Select(a => a.Name))}</td>";
+                            html += "</tr>";
+                        }
+                        html += "</table>";
+                    }
+                    else
+                    {
+                        html += "<p>Ничего не найдено.</p>";
+                    }
+                    html += "</body></html>";
 
                     context.Session.Set<Movie>("movie", movie);
 
-                    await context.Response.WriteAsync(strResponse);
+                    await context.Response.WriteAsync(strResponse + html);
                 });
             });
 
@@ -107,14 +147,12 @@ namespace Lab3
                 appBuilder.Run(async (context) =>
                 {
                     Movie movie = new Movie();
-                    if (context.Request.Cookies.ContainsKey("Title"))
+
+                    if (context.Request.Cookies.ContainsKey("AgeRestriction"))
                     {
-                        movie.Title = context.Request.Cookies["Title"];
+                        movie.AgeRestriction = int.Parse(context.Request.Cookies["AgeRestriction"]);
                     }
-                    if (context.Request.Cookies.ContainsKey("GenreId") && Guid.TryParse(context.Request.Cookies["GenreId"], out Guid genreId))
-                    {
-                        movie.GenreId = genreId;
-                    }
+
                     if (context.Request.Cookies.ContainsKey("Actors"))
                     {
                         string[] actorIds = context.Request.Cookies["Actors"].Split(',');
@@ -122,7 +160,8 @@ namespace Lab3
                     }
 
                     ICachedService<Actor> cachedActorsService = context.RequestServices.GetService<ICachedService<Actor>>();
-                    List<Actor> actors = cachedActorsService.GetFromCache("Actors20").ToList();
+                    List<Actor> actors20 = cachedActorsService.GetFromCache("Actors20").ToList();
+                    List<Actor> actors = cachedActorsService.GetAll().ToList();
 
                     ICachedService<Genre> cachedGenresService = context.RequestServices.GetService<ICachedService<Genre>>();
                     List<Genre> genres = cachedGenresService.GetFromCache("Genres20").ToList();
@@ -130,39 +169,84 @@ namespace Lab3
                     string strResponse = "<HTML><HEAD><TITLE>Фильм</TITLE></HEAD>" +
                     "<META http-equiv='Content-Type' content='text/html; charset=utf-8'/>" +
                     "<BODY><FORM action ='/searchform2' method='GET'>" +
-                    "Название фильма:<BR><INPUT type='text' name='Title' value='" + movie.Title + "'><BR>" +
-                    "Жанр:<BR><SELECT name='GenreId'>";
-                    foreach (var genre in genres)
-                    {
-                        bool isSelected = genre.GenreId == movie.GenreId;
-                        strResponse += $"<OPTION value='{genre.GenreId}' {(isSelected ? "selected" : "")}>{genre.Name}</OPTION>";
-                    }
-                    strResponse += "</SELECT><BR>" +
+                    "Возрастное ограничение:<BR><INPUT type='text' name='AgeRestriction' value='" + movie.AgeRestriction + "'><BR>" +
+                    //"Жанр:<BR><SELECT name='GenreId'>";
+                    //foreach (var genre in genres)
+                    //{
+                    //    bool isSelected = genre.GenreId == movie.GenreId;
+                    //    strResponse += $"<OPTION value='{genre.GenreId}' {(isSelected ? "selected" : "")}>{genre.Name}</OPTION>";
+                    //}
+                    //strResponse += "</SELECT><BR>" +
                     "Актеры:<BR><SELECT name='Actors' multiple='multiple'>";
-                    foreach (var actor in actors)
+                    foreach (var actor in actors20)
                     {
                         bool isSelected = movie.Actors.Any(a => a.ActorId == actor.ActorId);
                         strResponse += $"<OPTION value='{actor.ActorId}' {(isSelected ? "selected" : "")}>{actor.Name}</OPTION>";
                     }
                     strResponse += "</SELECT><BR>" +
-                    "<BR><INPUT type='submit' value='Сохранить в Cookie'></FORM>";
+
+                    "<BR><INPUT type='submit' value='Сохранить в куки и найти в базе данных'></FORM>";
 
                     strResponse += "<BR><A href='/'>Главная</A></BODY></HTML>";
 
-                    movie.Title = context.Request.Query["Title"];
-                    if (Guid.TryParse(context.Request.Query["GenreId"], out genreId))
+                    // Обработка данных из формы
+                    if (!string.IsNullOrEmpty(context.Request.Query["AgeRestriction"]))
                     {
-                        movie.GenreId = genreId;
+                        movie.AgeRestriction = int.Parse(context.Request.Query["AgeRestriction"]);
+                    }
+
+                    if (Guid.TryParse(context.Request.Query["GenreId"], out Guid selectedGenreId))
+                    {
+                        movie.GenreId = selectedGenreId;
                     }
 
                     var selectedActorIds = context.Request.Query["Actors"].ToArray();
-                    movie.Actors = actors.Where(actor => selectedActorIds.Contains(actor.ActorId.ToString())).ToList();
+                    movie.Actors = actors20.Where(actor => selectedActorIds.Contains(actor.ActorId.ToString())).ToList();
 
-                    context.Response.Cookies.Append("Title", string.IsNullOrEmpty(movie.Title)?"":movie.Title, new CookieOptions { Expires = DateTimeOffset.UtcNow.AddDays(1) });
-                    context.Response.Cookies.Append("GenreId", string.IsNullOrEmpty(movie.GenreId.ToString())?"":movie.GenreId.ToString(), new CookieOptions { Expires = DateTimeOffset.UtcNow.AddMinutes(1) });
-                    context.Response.Cookies.Append("Actors", string.IsNullOrEmpty(string.Join(",", movie.Actors.Select(a => a.ActorId.ToString())))?"": string.Join(",", movie.Actors.Select(a => a.ActorId.ToString())), new CookieOptions { Expires = DateTimeOffset.UtcNow.AddMinutes(1) });
+                    List<Movie> results = new List<Movie>();
+                    if (movie != default(Movie))
+                    {
+                        foreach (var p in movie.Actors)
+                        {
+                            results.AddRange(p.Movies);
+                        }
+                        results = results.Distinct().Where(m => m.AgeRestriction == movie.AgeRestriction).ToList();
+                        //results = results.Where(m => m.GenreId == movie.GenreId).ToList();
+                    }
 
-                    await context.Response.WriteAsync(strResponse);
+                    var html = "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Поиск из бд</title></head><body>";
+                    html += "<h1>Найденные результаты</h1>";
+
+                    if (results.Count > 0)
+                    {
+                        html += "<table border='1' style='border-collapse:collapse'>";
+                        html += "<tr><th>Название</th><th>Возрастное ограничение</th><th>Описание</th><th>Актеры</th></tr>";
+                        foreach (var mov in results)
+                        {
+                            html += "<tr>";
+                            html += $"<td>{mov.Title}</td>";
+                            html += $"<td>{mov.AgeRestriction}</td>";
+                            html += $"<td>{mov.Description}</td>";
+                            html += $"<td>{string.Join(", ", mov.Actors.Select(a => a.Name))}</td>";
+                            html += "</tr>";
+                        }
+                        html += "</table>";
+                    }
+                    else
+                    {
+                        html += "<p>Ничего не найдено.</p>";
+                    }
+                    html += "</body></html>";
+
+                    var cookieOptions = new CookieOptions
+                    {
+                        Expires = DateTimeOffset.UtcNow.AddSeconds(266) 
+                    };
+
+                    context.Response.Cookies.Append("AgeRestriction", movie.AgeRestriction.ToString(), cookieOptions);
+                    context.Response.Cookies.Append("Actors", string.Join(",", movie.Actors.Select(a => a.ActorId.ToString())), cookieOptions);
+
+                    await context.Response.WriteAsync(strResponse + html);
                 });
             });
 

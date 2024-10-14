@@ -22,6 +22,11 @@ namespace Lab3.Services
             }
         }
 
+        public IEnumerable<Seat> GetAll()
+        {
+            return _dbContext.Seats.Include(s => s.Event).Include(s => s.Showtime).ThenInclude(s => s.Movie).ToList();
+        }
+
         public IEnumerable<Seat> GetAllFromDb(int rowsNumber = 20)
         {
             return _dbContext.Seats.Include(s => s.Event).Include(s => s.Showtime).ThenInclude(s => s.Movie).Take(rowsNumber).ToList();

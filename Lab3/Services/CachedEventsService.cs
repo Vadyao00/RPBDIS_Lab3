@@ -21,6 +21,11 @@ namespace Lab3.Services
             }
         }
 
+        public IEnumerable<Event> GetAll()
+        {
+            return _dbContext.Events.ToList();
+        }
+
         public IEnumerable<Event> GetAllFromDb(int rowsNumber = 20)
         {
             return _dbContext.Events.Take(rowsNumber).ToList();

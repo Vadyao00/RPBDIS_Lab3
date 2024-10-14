@@ -22,6 +22,11 @@ namespace Lab3.Services
             }
         }
 
+        public IEnumerable<WorkLog> GetAll()
+        {
+            return _dbContext.WorkLogs.ToList();
+        }
+
         public IEnumerable<WorkLog> GetAllFromDb(int rowsNumber = 20)
         {
             return _dbContext.WorkLogs.Include(w => w.Employee).Take(rowsNumber).ToList();
