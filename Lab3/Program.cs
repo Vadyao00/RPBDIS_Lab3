@@ -303,7 +303,6 @@ namespace Lab3
                     }
                     HtmlString += "</TABLE>";
                     HtmlString += "<BR><A href='/'>Главная</A></BR>";
-                    HtmlString += "<BR><A href='/form'>Данные пользователя</A></BR>";
                     HtmlString += "</BODY></HTML>";
 
                     await context.Response.WriteAsync(HtmlString);
@@ -334,7 +333,6 @@ namespace Lab3
                     }
                     HtmlString += "</TABLE>";
                     HtmlString += "<BR><A href='/'>Главная</A></BR>";
-                    HtmlString += "<BR><A href='/form'>Данные пользователя</A></BR>";
                     HtmlString += "</BODY></HTML>";
 
                     await context.Response.WriteAsync(HtmlString);
@@ -371,7 +369,6 @@ namespace Lab3
                     }
                     HtmlString += "</TABLE>";
                     HtmlString += "<BR><A href='/'>Главная</A></BR>";
-                    HtmlString += "<BR><A href='/form'>Данные пользователя</A></BR>";
                     HtmlString += "</BODY></HTML>";
 
                     await context.Response.WriteAsync(HtmlString);
@@ -412,7 +409,6 @@ namespace Lab3
                     }
                     HtmlString += "</TABLE>";
                     HtmlString += "<BR><A href='/'>Главная</A></BR>";
-                    HtmlString += "<BR><A href='/form'>Данные пользователя</A></BR>";
                     HtmlString += "</BODY></HTML>";
 
                     await context.Response.WriteAsync(HtmlString);
@@ -457,7 +453,6 @@ namespace Lab3
                     }
                     HtmlString += "</TABLE>";
                     HtmlString += "<BR><A href='/'>Главная</A></BR>";
-                    HtmlString += "<BR><A href='/form'>Данные пользователя</A></BR>";
                     HtmlString += "</BODY></HTML>";
 
                     await context.Response.WriteAsync(HtmlString);
@@ -494,7 +489,6 @@ namespace Lab3
                     }
                     HtmlString += "</TABLE>";
                     HtmlString += "<BR><A href='/'>Главная</A></BR>";
-                    HtmlString += "<BR><A href='/form'>Данные пользователя</A></BR>";
                     HtmlString += "</BODY></HTML>";
 
                     await context.Response.WriteAsync(HtmlString);
@@ -525,7 +519,6 @@ namespace Lab3
                     }
                     HtmlString += "</TABLE>";
                     HtmlString += "<BR><A href='/'>Главная</A></BR>";
-                    HtmlString += "<BR><A href='/form'>Данные пользователя</A></BR>";
                     HtmlString += "</BODY></HTML>";
 
                     await context.Response.WriteAsync(HtmlString);
@@ -560,7 +553,6 @@ namespace Lab3
                     }
                     HtmlString += "</TABLE>";
                     HtmlString += "<BR><A href='/'>Главная</A></BR>";
-                    HtmlString += "<BR><A href='/form'>Данные пользователя</A></BR>";
                     HtmlString += "</BODY></HTML>";
 
                     await context.Response.WriteAsync(HtmlString);
